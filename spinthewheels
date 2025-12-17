@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>特徵大轉盤 (精準校正版)</title>
+    <style>
+        /* --- 全局樣式 --- */
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background-color: #fce4ec;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #d81b60;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        /* --- 轉盤區塊 --- */
+        .wheel-container {
+            position: relative;
+            width: 350px;
+            height: 350px;
+            margin-bottom: 30px;
+        }
+
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 8px solid #fff;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+            position: relative;
+            /* 背景顏色順序 (順時針) */
+            background: conic-gradient(
+                #FFCDD2 0deg 45deg,   /* 1. 眼睛 */
+                #F8BBD0 45deg 90deg,  /* 2. 耳朵 */
+                #E1BEE7 90deg 135deg, /* 3. 嘴巴 */
+                #D1C4E9 135deg 180deg,/* 4. 鼻子 */
+                #C5CAE9 180deg 225deg,/* 5. 頭髮 */
+                #BBDEFB 225deg 270deg,/* 6. 性別 */
+                #B3E5FC 270deg 315deg,/* 7. 眼鏡 */
+                #B2DFDB 315deg 360deg /* 8. 衣服 */
+            );
+        }
+
+        /* --- 文字標籤 --- */
+        .label {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform-origin: 0 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #444;
+            width: 175px;
+            text-align: right;
+            padding-right: 25px;
+            box-sizing: border-box;
+            line-height: 0; 
+            pointer-events: none;
+        }
+
+        /* 文字角度設定 */
+        .label:nth-child(1) { transform: rotate(22.5deg); }
+        .label:nth-child(2) { transform: rotate(67.5deg); }
+        .label:nth-child(3) { transform: rotate(112.5deg); }
+        .label:nth-child(4) { transform: rotate(157.5deg); }
+        .label:nth-child(5) { transform: rotate(202.5deg); }
+        .label:nth-child(6) { transform: rotate(247.5deg); }
+        .label:nth-child(7) { transform: rotate(292.5deg); }
+        .label:nth-child(8) { transform: rotate(337.5deg); }
+
+        /* --- 指針 (紅色倒三角) --- */
+        .pointer {
+            position: absolute;
+            top: -25px; left: 50%;
+            transform: translateX(-50%);
+            width: 0; height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 40px solid #d81b60;
+            z-index: 10;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+        }
+
+        .center-dot {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px; height: 50px;
+            background: #fff;
+            border-radius: 50%;
+            z-index: 5;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+
+        /* --- 按鈕 --- */
+        button {
+            padding: 15px 50px;
+            font-size: 24px;
+            background-color: #d81b60;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px #ad1457;
+            transition: transform 0.1s;
+        }
+        button:active { transform: translateY(2px); box-shadow: 0 2px #ad1457; }
+        button:disabled { background-color: #ccc; box-shadow: none; cursor: not-allowed; }
+
+        /* --- 彈出視窗 --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 90%;
+            position: relative;
+            animation: popIn 0.3s ease-out;
+        }
+
+        .card-image {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 10px;
+            border: 2px solid #eee;
+            display: block;
+            margin: 0 auto 15px auto;
+        }
+        
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .close-btn {
+            background-color: #333;
+            padding: 10px 30px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>✨ 特徵大轉盤 ✨</h1>
+
+    <div class="wheel-container">
+        <div class="pointer"></div>
+        <div class="wheel" id="wheel">
+            <div class="label">眼睛 👁️</div>
+            <div class="label">耳朵 👂</div>
+            <div class="label">嘴巴 👄</div>
+            <div class="label">鼻子 👃</div>
+            <div class="label">頭髮 💇</div>
+            <div class="label">性別 ⚧️</div>
+            <div class="label">眼鏡 👓</div>
+            <div class="label">衣服 👕</div>
+            <div class="center-dot"></div>
+        </div>
+    </div>
+
+    <button id="spinBtn" onclick="spinWheel()">旋轉!</button>
+
+    <div class="modal-overlay" id="modal" onclick="closeModal(event)">
+        <div class="modal-content">
+            <img src="" alt="問題卡" class="card-image" id="resultImage">
+            <button class="close-btn" onclick="document.getElementById('modal').style.display='none'">關閉</button>
+        </div>
+    </div>
+
+    <script>
+        const wheel = document.getElementById('wheel');
+        const modal = document.getElementById('modal');
+        const resultImage = document.getElementById('resultImage');
+        const spinBtn = document.getElementById('spinBtn');
+        
+        let currentDeg = 0;
+
+        // 資料陣列：對應轉盤上的 8 個區塊
+        const segments = [
+            { name: "眼睛", file: "https://i.imgur.com/1vqFUSw.png" }, // Index 0
+            { name: "耳朵", file: "https://i.imgur.com/8FAP963.png" }, // Index 1
+            { name: "嘴巴", file: "https://i.imgur.com/7ErUnU8.png" }, // Index 2
+            { name: "鼻子", file: "https://i.imgur.com/h0RMS4w.png" }, // Index 3
+            { 
+                name: "頭髮", 
+                file: [
+                    "https://i.imgur.com/GlI3sQb.png",
+                    "https://i.imgur.com/psrZEAX.png"
+                ] 
+            }, // Index 4
+            { name: "性別", file: "https://i.imgur.com/QvQHQq6.png" }, // Index 5
+            { name: "眼鏡", file: "https://i.imgur.com/KoAEAeo.png" }, // Index 6
+            { name: "衣服", file: "https://i.imgur.com/vRfNzeO.png" }  // Index 7
+        ];
+
+        function spinWheel() {
+            spinBtn.disabled = true;
+            
+            // 旋轉邏輯：多轉 5~10 圈 + 隨機角度
+            const randomSpins = Math.floor(Math.random() * 5) + 5; 
+            const randomDegree = Math.floor(Math.random() * 360);
+            const totalRotate = (randomSpins * 360) + randomDegree;
+            
+            currentDeg += totalRotate;
+            wheel.style.transform = `rotate(${currentDeg}deg)`;
+
+            // 4秒後顯示結果
+            setTimeout(() => {
+                showResult(currentDeg);
+                spinBtn.disabled = false;
+            }, 4000);
+        }
+
+        // --- 核心修正：計算結果 ---
+        function showResult(deg) {
+            const actualDeg = deg % 360;
+            const segmentSize = 360 / 8; // 每個區塊 45 度
+
+            // 1. 計算原始索引
+            // (360 - 角度) / 45 = 原始指向的位置
+            let rawIndex = Math.floor(((360 - actualDeg) % 360) / segmentSize);
+
+            // 2. ★★★ 偏移量修正 (Fix Offset) ★★★
+            // 你的情況是：視覺是耳朵(1)，程式算出來是鼻子(3)。
+            // 所以程式算出來的索引比視覺大了 2。
+            // 修正公式：(原始索引 - 2 + 8) % 8
+            // 這樣就可以把 "鼻子" 的結果修正回 "耳朵"。
+            let fixedIndex = (rawIndex - 2 + 8) % 8;
+            
+            // 獲取修正後的資料
+            const winner = segments[fixedIndex];
+            let imageFile = winner.file;
+
+            // 特殊功能：頭髮隨機二選一
+            if (Array.isArray(winner.file)) {
+                const randomIndex = Math.floor(Math.random() * winner.file.length);
+                imageFile = winner.file[randomIndex];
+            }
+
+            // 顯示結果
+            console.log("轉動角度:", actualDeg, "原始算式索引:", rawIndex, "修正後索引:", fixedIndex, "結果:", winner.name);
+            resultImage.src = imageFile;
+            modal.style.display = 'flex';
+        }
+
+        function closeModal(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
